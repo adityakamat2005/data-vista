@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title th:text="${profile.fileName} + ' — DataVista'">Result</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" th:href="@{/css/style.css}" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div th:replace="fragments/layout :: nav"></div>
+
+  <h1 th:text="${profile.fileName}">filename.csv</h1>
+  <p class="subtitle">
+    <span th:text="${profile.rowCount}">0</span> rows &#8226;
+    <span th:text="${profile.columnCount}">0</span> columns &#8226;
+    <span th:text="${profile.duplicateRowCount}">0</span> duplicate rows
+  </p>
+
+  <div class="score-row">
+    <div class="score-card">
+      <div class="score-number" th:text="${profile.healthScore}">0</div>
+      <div class="score-label" th:text="${profile.healthLabel}">Label</div>
+    </div>
+    <div class="sub-scores">
+      <div class="sub-score"><span class="label">Completeness</span><span class="value" th:text="${profile.completenessScore}">0</span></div>
+      <div class="sub-score"><span class="label">Duplicate score</span><span class="value" th:text="${profile.duplicateScore}">0</span></div>
+      <div class="sub-score"><span class="label">Structure</span><span class="value" th:text="${profile.structureScore}">0</span></div>
+    </div>
+  </div>
+
+  <div class="btn-row" th:if="${profile.id != null}">
+    <a class="btn btn-primary" th:href="@{/history/{id}/cleaned-csv(id=${profile.id})}">Download cleaned CSV</a>
+    <a class="btn btn-secondary" th:href="@{/history/{id}/pdf(id=${profile.id})}">Download PDF report</a>
+    <a class="btn btn-secondary" th:href="@{/history}">Back to history</a>
+  </div>
+
+  <div class="card">
+    <h3>AI insight</h3>
+    <p th:text="${profile.aiInsight}">Insight text appears here.</p>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-box">
+      <h3 style="font-size:13px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 12px;">Missing values by column</h3>
+      <canvas id="missingChart"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3 style="font-size:13px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 12px;">Column type breakdown</h3>
+      <canvas id="typeChart"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Columns</h3>
+    <table>
+      <tr>
+        <th>Name</th><th>Type</th><th>Missing</th><th>Unique</th><th>Min</th><th>Max</th><th>Mean</th><th>Flags</th>
+      </tr>
+      <tr th:each="col : ${profile.columns}">
+        <td th:text="${col.name}">name</td>
+        <td>
+          <span th:if="${col.inferredType == 'NUMERIC'}" class="badge badge-numeric">NUMERIC</span>
+          <span th:if="${col.inferredType == 'TEXT'}" class="badge badge-text">TEXT</span>
+          <span th:if="${col.inferredType == 'EMPTY'}" class="badge badge-empty">EMPTY</span>
+        </td>
+        <td th:text="${col.missingPercentage} + '%'">0%</td>
+        <td th:text="${col.uniqueCount}">0</td>
+        <td th:text="${col.min} ?: '&#8212;'">&#8212;</td>
+        <td th:text="${col.max} ?: '&#8212;'">&#8212;</td>
+        <td th:text="${col.mean} ?: '&#8212;'">&#8212;</td>
+        <td>
+          <div class="flag-row">
+            <span th:if="${col.outlierCount > 0}" class="badge badge-warning" th:text="${col.outlierCount} + ' outliers'">outliers</span>
+            <span th:if="${col.piiType != null}" class="badge badge-danger" th:text="${col.piiType}">PII</span>
+            <span th:if="${col.inconsistentFormatting}" class="badge badge-warning" th:text="'formatting (' + ${col.formatIssueCount} + ')'">formatting</span>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card" th:if="${profile.correlations != null and !profile.correlations.isEmpty()}">
+    <h3>Correlations between numeric columns</h3>
+    <table>
+      <tr><th>Column A</th><th>Column B</th><th>r</th></tr>
+      <tr th:each="pair : ${profile.correlations}">
+        <td th:text="${pair.columnA}">a</td>
+        <td th:text="${pair.columnB}">b</td>
+        <td th:text="${pair.correlation}">0</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  const chartLabels = [[${chartLabels}]];
+  const chartMissing = [[${chartMissing}]];
+  const chartTypeCounts = [[${chartTypeCounts}]];
+
+  new Chart(document.getElementById('missingChart'), {
+    type: 'bar',
+    data: {
+      labels: chartLabels,
+      datasets: [{
+        label: 'Missing %',
+        data: chartMissing,
+        backgroundColor: '#7C3AED'
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8B94A8' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+        y: { ticks: { color: '#8B94A8' }, grid: { color: 'rgba(255,255,255,0.06)' }, beginAtZero: true }
+      }
+    }
+  });
+
+  const typeLabels = Object.keys(chartTypeCounts);
+  const typeValues = Object.values(chartTypeCounts);
+
+  new Chart(document.getElementById('typeChart'), {
+    type: 'doughnut',
+    data: {
+      labels: typeLabels,
+      datasets: [{
+        data: typeValues,
+        backgroundColor: ['#7C3AED', '#22D3EE', '#5B6478']
+      }]
+    },
+    options: {
+      plugins: { legend: { labels: { color: '#E5E7EB' } } }
+    }
+  });
+</script>
+</body>
+</html>

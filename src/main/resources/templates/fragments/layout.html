@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="nav" class="navbar">
+  <a class="brand" th:href="@{/upload}"><span class="dot"></span>DataVista</a>
+  <div class="nav-links">
+    <a th:href="@{/upload}">Upload</a>
+    <a th:href="@{/history}">History</a>
+    <a th:href="@{/account}">Account</a>
+    <span class="user-pill" th:text="${userEmail}">user@example.com</span>
+    <form th:action="@{/logout}" method="post" style="display:inline; margin:0;">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+      <button type="submit" class="btn btn-secondary btn-sm">Log out</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

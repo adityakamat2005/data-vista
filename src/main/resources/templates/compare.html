@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Compare datasets — DataVista</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+<div class="wrap">
+  <div th:replace="fragments/layout :: nav"></div>
+
+  <h1>Compare datasets</h1>
+  <p class="subtitle">Side-by-side comparison of two analyzed datasets.</p>
+
+  <div class="compare-grid">
+    <div class="compare-col">
+      <div class="card">
+        <h3 th:text="${profileA.fileName}">A.csv</h3>
+        <p>Health score: <strong th:text="${profileA.healthScore}">0</strong> (<span th:text="${profileA.healthLabel}">Label</span>)</p>
+        <p>Rows: <span th:text="${profileA.rowCount}">0</span> &#8226; Columns: <span th:text="${profileA.columnCount}">0</span></p>
+        <p>Duplicate rows: <span th:text="${profileA.duplicateRowCount}">0</span></p>
+      </div>
+    </div>
+    <div class="compare-col">
+      <div class="card">
+        <h3 th:text="${profileB.fileName}">B.csv</h3>
+        <p>Health score: <strong th:text="${profileB.healthScore}">0</strong> (<span th:text="${profileB.healthLabel}">Label</span>)</p>
+        <p>Rows: <span th:text="${profileB.rowCount}">0</span> &#8226; Columns: <span th:text="${profileB.columnCount}">0</span></p>
+        <p>Duplicate rows: <span th:text="${profileB.duplicateRowCount}">0</span></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Health score difference (A minus B)</h3>
+    <p>
+      <span th:if="${profileA.healthScore - profileB.healthScore >= 0}" class="delta-up" th:text="'+' + (${profileA.healthScore} - ${profileB.healthScore})">+0</span>
+      <span th:if="${profileA.healthScore - profileB.healthScore < 0}" class="delta-down" th:text="${profileA.healthScore} - ${profileB.healthScore}">0</span>
+      points
+    </p>
+  </div>
+
+  <div class="card" th:if="${columnComparisons != null and !columnComparisons.isEmpty()}">
+    <h3>Column-level comparison (matching column names)</h3>
+    <table>
+      <tr>
+        <th>Column</th>
+        <th th:text="${profileA.fileName} + ' missing %'">A missing %</th>
+        <th th:text="${profileB.fileName} + ' missing %'">B missing %</th>
+      </tr>
+      <tr th:each="row : ${columnComparisons}">
+        <td th:text="${row.name}">name</td>
+        <td th:text="${row.missingA} + '%'">0%</td>
+        <td th:text="${row.missingB} + '%'">0%</td>
+      </tr>
+    </table>
+  </div>
+  <div class="card" th:if="${columnComparisons == null or columnComparisons.isEmpty()}">
+    <p class="subtitle" style="margin:0;">No columns share the same name between these two datasets.</p>
+  </div>
+
+  <div class="btn-row">
+    <a class="btn btn-secondary" th:href="@{/history}">Back to history</a>
+  </div>
+</div>
+</body>
+</html>
