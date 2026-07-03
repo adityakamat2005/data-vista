@@ -139,7 +139,7 @@ DataVista is a full-stack Spring Boot web application that lets users upload CSV
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/adityakamat2005/datavista.git
+git clone https://github.com/adityakamat2005/data-vista.git
 cd datavista
 ```
 
